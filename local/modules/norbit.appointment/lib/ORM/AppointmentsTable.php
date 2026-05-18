@@ -1,6 +1,6 @@
 <?
 // пространство имен модуля
-namespace Norbit\Appointment;
+namespace Norbit\Appointment\ORM;
 
 // пространство имен для ORM
 use \Bitrix\Main\Entity;
@@ -70,6 +70,8 @@ class AppointmentsTable extends Entity\DataManager
             // имя сущности
                 "SERVICE_ID",
                 array(
+                    // обязательное поле
+                    "required" => true,
                     "NOT_SHOWED" => true,
                 )
             ),
@@ -78,7 +80,7 @@ class AppointmentsTable extends Entity\DataManager
             // имя сущности
                 "SERVICE",
                 // связываемая сущность другой таблицы
-                '\Norbit\Appointment\ServicesTable',
+                '\Norbit\Appointment\ORM\ServicesTable',
                 // this - текущая сущность, ref - связываемая
                 array("=this.SERVICE_ID" => "ref.ID")
             ),
@@ -87,6 +89,8 @@ class AppointmentsTable extends Entity\DataManager
             // имя сущности
                 "BRANCH_ID",
                 array(
+                    // обязательное поле
+                    "required" => true,
                     "NOT_SHOWED" => true,
                 )
             ),
@@ -95,7 +99,7 @@ class AppointmentsTable extends Entity\DataManager
             // имя сущности
                 "BRANCH",
                 // связываемая сущность другой таблицы
-                '\Norbit\Appointment\BranchesTable',
+                '\Norbit\Appointment\ORM\BranchesTable',
                 // this - текущая сущность, ref - связываемая
                 array("=this.BRANCH_ID" => "ref.ID")
             ),
@@ -104,6 +108,8 @@ class AppointmentsTable extends Entity\DataManager
             // имя сущности
                 "SPECIALIST_ID",
                 array(
+                    // обязательное поле
+                    "required" => true,
                     "NOT_SHOWED" => true,
                 )
             ),
@@ -112,7 +118,7 @@ class AppointmentsTable extends Entity\DataManager
             // имя сущности
                 "SPECIALIST",
                 // связываемая сущность другой таблицы
-                '\Norbit\Appointment\SpecialistsTable',
+                '\Norbit\Appointment\ORM\SpecialistsTable',
                 // this - текущая сущность, ref - связываемая
                 array("=this.SPECIALIST_ID" => "ref.ID")
             ),
@@ -121,6 +127,8 @@ class AppointmentsTable extends Entity\DataManager
             // имя сущности
                 "SLOT_ID",
                 array(
+                    // обязательное поле
+                    "required" => true,
                     "NOT_SHOWED" => true,
                 )
             ),
@@ -129,7 +137,7 @@ class AppointmentsTable extends Entity\DataManager
             // имя сущности
                 "SLOT",
                 // связываемая сущность другой таблицы
-                '\Norbit\Appointment\SlotsTable',
+                '\Norbit\Appointment\ORM\SlotsTable',
                 // this - текущая сущность, ref - связываемая
                 array("=this.SLOT_ID" => "ref.ID")
             ),
@@ -183,7 +191,7 @@ class AppointmentsTable extends Entity\DataManager
 	{
         $fields = $event->getParameter("fields");
         if($slotId = $fields['SLOT_ID']) {
-            \Norbit\Appointment\SlotsTable::update($slotId, ['ACTIVE' => 'N']);
+            \Norbit\Appointment\ORM\SlotsTable::update($slotId, ['ACTIVE' => 'N']);
         }
 
         AppointmentsTable::clearCache();

@@ -5,9 +5,11 @@ use \Bitrix\Main\Engine\Controller;
 use Bitrix\Main\Engine\ActionFilter;
 use Bitrix\Main\Engine\Response\AjaxJson;
 use Bitrix\Main\Error;
-use Norbit\Appointment\AppointmentsTable;
-use Norbit\Appointment\Services\AppointmentService;
-use Norbit\Appointment\SlotsTable;
+use Bitrix\Main\Request;
+use Norbit\Appointment\ORM\AppointmentsTable;
+use Norbit\Appointment\Service\AppointmentService;
+use Norbit\Appointment\Service\SlotsService;
+use Norbit\Appointment\ORM\SlotsTable;
 use Bitrix\Main\Application;
 use Bitrix\Main\DB\Connection;
 use Bitrix\Main\DB\SqlExpression;
@@ -16,89 +18,138 @@ use Norbit\Main\Exception\BaseExceptionInterface;
 
 class AppointmentController extends Controller
 {
+    private AppointmentsTable $appointmentsTable;
+    private AppointmentService $appointmentService;
+    private SlotsService $slotsService;
+
     /**
-     * Настройка фильтров для действий
-     *
-     * @return array
+     * Конструктор класса AppointmentController.
+     * @param AppointmentsTable|null $appointmentsTable     *
+     * @param AppointmentService|null $appointmentService     *
+     * @param SlotsService|null $slotsService     *
+     * @param Request|null $request
      */
-    protected function getDefaultPreFilters()
+    public function __construct(?Request $request = null, ?AppointmentsTable $appointmentsTable = null, ?AppointmentService $appointmentService = null, ?SlotsService $slotsService = null)
     {
-        return [];
+        parent::__construct($request);
+
+        $this->appointmentsTable = $appointmentsTable ?? new AppointmentsTable();
+        $this->appointmentService = $appointmentService ?? new AppointmentService();
+        $this->slotsService = $slotsService ?? new SlotsService();
     }
 
-    public function addAction(AppointmentsTable $appointmentsTable, AppointmentService $service, int $service_id, int $branch_id, int $specialist_id, int $slot_id, string $date, string $fill_name, string $phone, Connection $db)
+    /**
+     * Настройки запросов
+     *
+     * @return array[]
+     */
+    public function getDefaultPreFilters(): array
     {
-        if(!$service->checkingSlotAvailability($service_id, $branch_id, $specialist_id, $slot_id)) {
-            $this->addError(new Error('This slot is not available'));
-            return null;
-        }
+        $postOptions = [
+            'prefilters' => [
+                new ActionFilter\Csrf(false),
+                new ActionFilter\Authentication(false),
+                new ActionFilter\HttpMethod([
+                    ActionFilter\HttpMethod::METHOD_POST
+                ]),
+                new ActionFilter\ContentType(['application/json'])
+            ],
+        ];
+        $getOptions = [
+            'prefilters' => [
+                new ActionFilter\Csrf(false),
+                new ActionFilter\Authentication,
+                new ActionFilter\HttpMethod([
+                    ActionFilter\HttpMethod::METHOD_GET
+                ]),
+            ]
+        ];
 
-        try {
-            $db->startTransaction();
-
-            $result = $appointmentsTable->add(
-                array(
-                    "ACTIVE" => "Y",
-                    "SITE" => "s1",
-                    "SERVICE_ID" => $service_id,
-                    "BRANCH_ID" => $branch_id,
-                    "SPECIALIST_ID" => $specialist_id,
-                    "SLOT_ID" => $slot_id,
-                    "DATE" => new \Bitrix\Main\Type\DateTime(date($date)),
-                    "FULL_NAME" => $fill_name,
-                    "PHONE" => $phone,
-                )
-            );
-
-            if($result->isSuccess()) {
-                $db->commitTransaction();
-
-                return [
-                    'result' => 'success',
-                    'message' => $result->getId(),
-                ];
-            } else {
-                $db->rollbackTransaction();
-
-                return [
-                    'result' => 'error',
-                    'message' => $result->getErrorMessages(),
-                ];
-            }
-        } catch (Throwable $e) {
-            $db->rollbackTransaction();
-            $this->addError(new Error('Error add'));
-        }
+        return [
+            //'add' => $postOptions,
+            //'delete' => $getOptions,
+        ];
     }
 
-    public function deleteAction(AppointmentsTable $appointmentsTable, SlotsTable $slotsTable, int $id, Connection $db): ?array
+    /**
+     * Метод для получения информации о типе заявителя по коду типа.
+     *
+     * @param int $service_id ID услуги
+     * @param int $branch_id ID филиала
+     * @param int $specialist_id ID специалиста
+     * @param int $slot_id ID слота
+     * @param string $date Дата записи
+     * @param string $fill_name ФИО клиента
+     * @param string $phone Телефон клиента
+     *
+     * @return array|AjaxJson Возвращает массив с данными записи или AjaxJson с ошибками.
+     */
+    public function addAction(): array|AjaxJson
     {
-        $slotId = $appointmentsTable->getByPrimary($id)->fetchObject()->getSlotId();
-
         try {
-            $db->startTransaction();
+            $request = $this->request->toArray();
 
-            $result = $appointmentsTable->delete($id);
-
-            if($result->isSuccess()) {
-                $slotsTable->update($slotId, ['ACTIVE' => 'Y']);
-
-                $db->commitTransaction();
-
-                return [
-                    'result' => 'success',
-                ];
-            } else {
-                $db->rollbackTransaction();
-
-                return [
-                    'result' => 'error',
-                    'message' => $result->getErrorMessages(),
-                ];
+            if(!$this->appointmentService->checkingSlotAvailability($request)) {
+                $this->addError(new Error('This slot is not available'));
+                return [];
             }
+
+            $result = $this->appointmentService->addAppointment($request);
+
+            if ($result->isSuccess()) {
+                return ['id' => $result->getId()];
+            } else {
+                foreach ($result->getErrors() as $error) {
+                    $this->addError(new Error($error->getMessage()));
+                }
+            }
+        } catch (BaseExceptionInterface $e) {
+            $this->addError(new Error($e->getMessage(), $e->getCode()));
         } catch (Throwable $e) {
-            $db->rollbackTransaction();
+            //$message = self::makeUnexpectedErrorLogAndGetUniversalMessage('SBKTS_CATEGORY_CONTROLLER_ADD_ACTION', $e);
+            //$this->addError(new Error($message, $e->getCode()));
             $this->addError(new Error('Error add'));
         }
+
+        return AjaxJson::createError($this->errorCollection);
+    }
+
+    /**
+     * Удаление категории
+     *
+     * @return array|AjaxJson
+     * @throws Throwable
+     * @throws BaseExceptionInterface
+     */
+    public function deleteAction(): array|AjaxJson
+    {
+        try {
+            $request = $this->request->toArray();
+
+            $result = $this->appointmentService->deleteAppointment($request);
+            if ($result->isSuccess()) {
+                $resultSlot = $this->slotsService->updateSlotAvailability($request);
+
+                if ($resultSlot->isSuccess()) {
+                    return ['data' => $result->getData()];
+                } else {
+                    foreach ($result->getErrors() as $error) {
+                        $this->addError(new Error($error->getMessage()));
+                    }
+                }
+            } else {
+                foreach ($result->getErrors() as $error) {
+                    $this->addError(new Error($error->getMessage()));
+                }
+            }
+        } catch (BaseExceptionInterface $e) {
+            $this->addError(new Error($e->getMessage(), $e->getCode()));
+        } catch (Throwable $e) {
+            //$message = self::makeUnexpectedErrorLogAndGetUniversalMessage('SBKTS_CATEGORY_CONTROLLER_DELETE_ACTION', $e);
+            //$this->addError(new Error($message, $e->getCode()));
+            $this->addError(new Error('Error delete'));
+        }
+
+        return AjaxJson::createError($this->errorCollection);
     }
 }

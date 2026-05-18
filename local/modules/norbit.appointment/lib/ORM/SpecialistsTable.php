@@ -1,6 +1,6 @@
 <?
 // пространство имен модуля
-namespace Norbit\Appointment;
+namespace Norbit\Appointment\ORM;
 
 // пространство имен для ORM
 use \Bitrix\Main\Entity;
@@ -84,7 +84,7 @@ class SpecialistsTable extends Entity\DataManager
             // имя сущности
                 "SERVICE",
                 // связываемая сущность другой таблицы
-                '\Norbit\Appointment\ServicesTable',
+                '\Norbit\Appointment\ORM\ServicesTable',
                 // this - текущая сущность, ref - связываемая
                 array("=this.SERVICE_ID" => "ref.ID")
             ),
@@ -98,7 +98,7 @@ class SpecialistsTable extends Entity\DataManager
             // имя сущности
                 "BRANCH",
                 // связываемая сущность другой таблицы
-                '\Norbit\Appointment\BranchesTable',
+                '\Norbit\Appointment\ORM\BranchesTable',
                 // this - текущая сущность, ref - связываемая
                 array("=this.BRANCH_ID" => "ref.ID")
             ),

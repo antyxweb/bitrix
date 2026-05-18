@@ -1,7 +1,7 @@
 <?php
 
 use \Bitrix\Main\Loader;
-use \Norbit\Appointment\AppointmentsTable;
+use \Norbit\Appointment\ORM\AppointmentsTable;
 class AdminAppointmentsListComponent extends \CBitrixComponent
 {
     public function executeComponent()
@@ -89,7 +89,7 @@ class AdminAppointmentsListComponent extends \CBitrixComponent
                     ],
                     [
                         'text' => GetMessage('ADMIN_APPOINTMENTS_LIST_DELETE_APPOINTMENT'),
-                        'onclick' => 'deleteAppointment(' . $item->getId() . ')',
+                        'onclick' => 'deleteAppointment(' . $item->getId() . ',' . $item->getSlotId() . ')',
                         'default' => true,
                     ],
                 ],

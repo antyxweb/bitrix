@@ -4,7 +4,7 @@ namespace Norbit\Appointment\Controller;
 use \Bitrix\Main\Engine\Controller;
 use Bitrix\Main\Engine\ActionFilter;
 use Bitrix\Main\Error;
-use Norbit\Appointment\SlotsTable;
+use Norbit\Appointment\ORM\SlotsTable;
 
 class SlotsController extends Controller
 {

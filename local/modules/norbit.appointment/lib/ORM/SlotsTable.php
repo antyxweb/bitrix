@@ -1,6 +1,6 @@
 <?
 // пространство имен модуля
-namespace Norbit\Appointment;
+namespace Norbit\Appointment\ORM;
 
 // пространство имен для ORM
 use \Bitrix\Main\Entity;
@@ -8,12 +8,12 @@ use \Bitrix\Main\Entity;
 use \Bitrix\Main\Application;
 
 // сущность ORM унаследованная от DataManager
-class BranchesTable extends Entity\DataManager
+class SlotsTable extends Entity\DataManager
 {
 	// название таблицы в базе данных, если не указывать данную функцию, то таблица в бд сформируется автоматически из неймспейса
 	public static function getTableName()
 	{
-		return "n_appointment_branches";
+		return "n_appointment_slots";
 	}
 
 	// подключение к БД, если не указывать, то будет использовано значение по умолчанию подключения из файла .settings.php. Если указать, то можно выбрать подключение, которое может быть описано в .setting.php
@@ -65,16 +65,7 @@ class BranchesTable extends Entity\DataManager
 					"required" => true,
 				)
 			),
-			// Название
-			new Entity\StringField(
-				// имя сущности
-				"NAME",
-				array(
-					// обязательное поле
-					"required" => true,
-				)
-			),
-            // поле для хранения айди автора, информация о которых будет храниться в другой таблице, свяжем данную таблицу с другой
+            // поле для хранения айди услуги, информация о которых будет храниться в другой таблице, свяжем данную таблицу с другой
             new Entity\IntegerField(
             // имя сущности
                 "SERVICE_ID"
@@ -84,9 +75,45 @@ class BranchesTable extends Entity\DataManager
             // имя сущности
                 "SERVICE",
                 // связываемая сущность другой таблицы
-                '\Norbit\Appointment\ServicesTable',
+                '\Norbit\Appointment\ORM\ServicesTable',
                 // this - текущая сущность, ref - связываемая
                 array("=this.SERVICE_ID" => "ref.ID")
+            ),
+            // поле для хранения айди филиала, информация о которых будет храниться в другой таблице, свяжем данную таблицу с другой
+            new Entity\IntegerField(
+            // имя сущности
+                "BRANCH_ID"
+            ),
+            // для связи двух таблиц, нужно будет создать поле зависимости, фактически такого поля нет в базе, оно является виртуальным
+            new Entity\ReferenceField(
+            // имя сущности
+                "BRANCH",
+                // связываемая сущность другой таблицы
+                '\Norbit\Appointment\ORM\BranchesTable',
+                // this - текущая сущность, ref - связываемая
+                array("=this.BRANCH_ID" => "ref.ID")
+            ),
+            // поле для хранения айди специалиста, информация о которых будет храниться в другой таблице, свяжем данную таблицу с другой
+            new Entity\IntegerField(
+            // имя сущности
+                "SPECIALIST_ID"
+            ),
+            // для связи двух таблиц, нужно будет создать поле зависимости, фактически такого поля нет в базе, оно является виртуальным
+            new Entity\ReferenceField(
+            // имя сущности
+                "SPECIALIST",
+                // связываемая сущность другой таблицы
+                '\Norbit\Appointment\ORM\SpecialistsTable',
+                // this - текущая сущность, ref - связываемая
+                array("=this.SPECIALIST_ID" => "ref.ID")
+            ),
+            // дата и время заполнения
+            new Entity\DatetimeField(
+            // имя сущности
+                "DATE",
+                array(
+                    'required' => true,
+                )
             ),
 		);
 	}
@@ -110,17 +137,17 @@ class BranchesTable extends Entity\DataManager
 	// очистка тегированного кеша при добавлении
 	public static function onAfterAdd(Entity\Event $event)
 	{
-        BranchesTable::clearCache();
+        SlotsTable::clearCache();
 	}
 	// очистка тегированного кеша при изменении
 	public static function onAfterUpdate(Entity\Event $event)
 	{
-        BranchesTable::clearCache();
+        SlotsTable::clearCache();
 	}
 	// очистка тегированного кеша при удалении
 	public static function onAfterDelete(Entity\Event $event)
 	{
-        BranchesTable::clearCache();
+        SlotsTable::clearCache();
 	}
 	// основной метод очистки кеша по тегу
 	public static function clearCache()

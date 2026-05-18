@@ -1,6 +1,6 @@
 <?
 // пространство имен модуля
-namespace Norbit\Appointment;
+namespace Norbit\Appointment\ORM;
 
 // пространство имен для ORM
 use \Bitrix\Main\Entity;
@@ -8,12 +8,12 @@ use \Bitrix\Main\Entity;
 use \Bitrix\Main\Application;
 
 // сущность ORM унаследованная от DataManager
-class ServicesTable extends Entity\DataManager
+class BranchesTable extends Entity\DataManager
 {
 	// название таблицы в базе данных, если не указывать данную функцию, то таблица в бд сформируется автоматически из неймспейса
 	public static function getTableName()
 	{
-		return "n_appointment_services";
+		return "n_appointment_branches";
 	}
 
 	// подключение к БД, если не указывать, то будет использовано значение по умолчанию подключения из файла .settings.php. Если указать, то можно выбрать подключение, которое может быть описано в .setting.php
@@ -74,6 +74,20 @@ class ServicesTable extends Entity\DataManager
 					"required" => true,
 				)
 			),
+            // поле для хранения айди автора, информация о которых будет храниться в другой таблице, свяжем данную таблицу с другой
+            new Entity\IntegerField(
+            // имя сущности
+                "SERVICE_ID"
+            ),
+            // для связи двух таблиц, нужно будет создать поле зависимости, фактически такого поля нет в базе, оно является виртуальным
+            new Entity\ReferenceField(
+            // имя сущности
+                "SERVICE",
+                // связываемая сущность другой таблицы
+                '\Norbit\Appointment\ORM\ServicesTable',
+                // this - текущая сущность, ref - связываемая
+                array("=this.SERVICE_ID" => "ref.ID")
+            ),
 		);
 	}
 
@@ -96,17 +110,17 @@ class ServicesTable extends Entity\DataManager
 	// очистка тегированного кеша при добавлении
 	public static function onAfterAdd(Entity\Event $event)
 	{
-        ServicesTable::clearCache();
+        BranchesTable::clearCache();
 	}
 	// очистка тегированного кеша при изменении
 	public static function onAfterUpdate(Entity\Event $event)
 	{
-        ServicesTable::clearCache();
+        BranchesTable::clearCache();
 	}
 	// очистка тегированного кеша при удалении
 	public static function onAfterDelete(Entity\Event $event)
 	{
-        ServicesTable::clearCache();
+        BranchesTable::clearCache();
 	}
 	// основной метод очистки кеша по тегу
 	public static function clearCache()

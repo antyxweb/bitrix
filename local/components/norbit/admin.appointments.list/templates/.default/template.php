@@ -76,13 +76,14 @@ $APPLICATION->IncludeComponent(
 );
 ?>
 <script>
-    function deleteAppointment(id) {
+    function deleteAppointment(id, slot_id) {
         let questionStatusDelete = '<?=GetMessage('ADMIN_APPOINTMENTS_LIST_QUESTION_DELETE_APPOINTMENT')?>';
         let question = confirm(questionStatusDelete.replace('#APPOINTMENT_ID#', id));
         if (question) {
             BX.ajax.runAction('norbit:appointment.Controller.AppointmentController.delete', {
                 data: {
-                    id: id
+                    id: id,
+                    slot_id: slot_id,
                 }
             }).then(function (response) {
                 console.log(response);

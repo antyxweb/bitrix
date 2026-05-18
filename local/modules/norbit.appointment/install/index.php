@@ -7,12 +7,22 @@ use Bitrix\Main\ModuleManager;
 use Bitrix\Main\Config\Option;
 // пространство имен с абстрактным классом для любых приложений, любой конкретный класс приложения является наследником этого абстрактного класса
 use Bitrix\Main\Application;
+use Bitrix\Main\Entity\DataManager;
 // пространство имен для работы c ORM
 use \Bitrix\Main\Entity\Base;
 // пространство имен для автозагрузки модулей
 use \Bitrix\Main\Loader;
 // пространство имен для событий
 use \Bitrix\Main\EventManager;
+
+// подключаем ORM
+use Norbit\Appointment\ORM\ServicesTable;
+use Norbit\Appointment\ORM\BranchesTable;
+use Norbit\Appointment\ORM\SpecialistsTable;
+use Norbit\Appointment\ORM\SlotsTable;
+use Norbit\Appointment\ORM\AppointmentsTable;
+
+use Norbit\Appointment\Handlers\AppointmentsHandler;
 
 // подключение ланговых файлов
 Loc::loadMessages(__FILE__);
@@ -62,25 +72,66 @@ class Norbit_Appointment extends CModule
     // метод отрабатывает при установке модуля
     function DoInstall()
     {
-         // глобальная переменная с обстрактным классом
-         global $APPLICATION;
-         // регистрируем модуль в системе
-         ModuleManager::RegisterModule("norbit.appointment");
-         // создаем таблицы баз данных, необходимые для работы модуля
-         $this->InstallDB();
-         // создаем первую и единственную запись в БД
-         $this->addData();
-         // регистрируем обработчики событий
-         $this->InstallEvents();
-         // копируем файлы, необходимые для работы модуля
-         $this->InstallFiles();
-         // устанавливаем агента
-         //$this->installAgents();
-         // подключаем скрипт с административным прологом и эпилогом
-         $APPLICATION->includeAdminFile(
-             Loc::getMessage('INSTALL_TITLE'),
-             __DIR__ . '/instalInfo.php'
-         );
+//         // глобальная переменная с обстрактным классом
+//         global $APPLICATION;
+//         // регистрируем модуль в системе
+//         ModuleManager::RegisterModule("norbit.appointment");
+//         // создаем таблицы баз данных, необходимые для работы модуля
+//         $this->InstallDB();
+//         // создаем первую и единственную запись в БД
+//         $this->addData();
+//         // регистрируем обработчики событий
+//         $this->InstallEvents();
+//         // копируем файлы, необходимые для работы модуля
+//         $this->InstallFiles();
+//         // устанавливаем агента
+//         //$this->installAgents();
+//         // подключаем скрипт с административным прологом и эпилогом
+//         $APPLICATION->includeAdminFile(
+//             Loc::getMessage('INSTALL_TITLE'),
+//             __DIR__ . '/instalInfo.php'
+//         );
+
+        // получаем контекст и из него запросы
+        $context = Application::getInstance()->getContext();
+        $request = $context->getRequest();
+        // глобальная переменная с обстрактным классом
+        global $APPLICATION;
+        // проверяем какой сейчас шаг, если он не существует или меньше 2, то выводим первый шаг установки
+        if ($request["step"] < 2) {
+            // подключаем скрипт с административным прологом и эпилогом
+            $APPLICATION->IncludeAdminFile(
+                Loc::getMessage('INSTALL_TITLE_STEP_1'),
+                __DIR__ . '/instalInfo-step1.php'
+            );
+        }
+        // проверяем какой сейчас шаг, усли 2, производим установку
+        if ($request["step"] == 2) {
+            // регистрируем модуль в системе
+            ModuleManager::RegisterModule($this->MODULE_ID);
+            // создаем таблицы баз данных, необходимые для работы модуля
+            $this->InstallDB();
+            // регистрируем обработчики событий
+            $this->InstallEvents();
+            // копируем файлы, необходимые для работы модуля
+            $this->InstallFiles();
+            // создаем таблицы баз данных, необходимые для работы модуля
+            $this->InstallTables();
+            // создаем таблицы баз данных, необходимые для работы модуля
+            $this->InstallEvents();
+            // заполняем таблицы если дано согласие
+            if ($request["add_data"] == "Y") {
+                $this->FillingTables();
+            }
+            // устанавливаем агента
+            //$this->installAgents();
+
+            // подключаем скрипт с административным прологом и эпилогом
+            $APPLICATION->IncludeAdminFile(
+                Loc::getMessage('INSTALL_TITLE_STEP_2'),
+                __DIR__ . '/instalInfo-step2.php'
+            );
+        }
 
         // для успешного завершения, метод должен вернуть true
         return true;
@@ -89,23 +140,44 @@ class Norbit_Appointment extends CModule
     // метод отрабатывает при удалении модуля
     function DoUninstall()
     {
-         // глобальная переменная с обстрактным классом
-         global $APPLICATION;
-         // удаляем таблицы баз данных, необходимые для работы модуля
-         $this->UnInstallDB();
-         // удаляем обработчики событий
-         $this->UnInstallEvents();
-         // удаляем файлы, необходимые для работы модуля
-         $this->UnInstallFiles();
-         // удаляем агента
-         //$this->unInstallAgents();
-         // удаляем регистрацию модуля в системе
-         ModuleManager::UnRegisterModule("norbit.appointment");
-         // подключаем скрипт с административным прологом и эпилогом
-         $APPLICATION->includeAdminFile(
-             Loc::getMessage('DEINSTALL_TITLE'),
-             __DIR__ . '/deInstalInfo.php'
-         );
+        // получаем контекст и из него запросы
+        $context = Application::getInstance()->getContext();
+        $request = $context->getRequest();
+        // глобальная переменная с обстрактным классом
+        global $APPLICATION;
+        // проверяем какой сейчас шаг, если он не существует или меньше 2, то выводим первый шаг удаления
+        if ($request["step"] < 2) {
+            // подключаем скрипт с административным прологом и эпилогом
+            $APPLICATION->IncludeAdminFile(
+                Loc::getMessage('DEINSTALL_TITLE_1'),
+                __DIR__ . '/deInstalInfo-step1.php'
+            );
+        }
+        // проверяем какой сейчас шаг, усли 2, производим удаление
+        if ($request["step"] == 2) {
+            // удаляем таблицы баз данных, необходимые для работы модуля
+            //$this->UnInstallDB();
+            // проверяим ответ формы введеный пользователем на первом шаге
+            if ($request["save_data"] == "Y") {
+                // удаляем таблицы баз данных, необходимые для работы модуля
+                $this->UnInstallDB();
+                $this->UnInstallTables();
+            }
+            // удаляем обработчики событий
+            $this->UnInstallEvents();
+            // удаляем файлы, необходимые для работы модуля
+            $this->UnInstallFiles();
+            // удаляем агента
+            //$this->unInstallAgents();
+            // удаляем регистрацию модуля в системе
+            ModuleManager::UnRegisterModule($this->MODULE_ID);
+
+            // подключаем скрипт с административным прологом и эпилогом
+            $APPLICATION->IncludeAdminFile(
+                Loc::getMessage('DEINSTALL_TITLE_2'),
+                __DIR__ . '/deInstalInfo-step2.php'
+            );
+        }
 
         // для успешного завершения, метод должен вернуть true
         return true;
@@ -114,53 +186,177 @@ class Norbit_Appointment extends CModule
     // метод для создания таблицы баз данных
     function InstallDB()
     {
-        // подключаем модуль для того что бы был видем класс ORM
-        Loader::includeModule($this->MODULE_ID);
-        // через класс Application получаем соединение по переданному параметру, параметр берем из ORM-сущности (он указывается, если необходим другой тип подключения, отличный от default), если тип подключения по умолчанию, то параметр можно не передавать. Далее по подключению вызываем метод isTableExists, в который передаем название таблицы полученное с помощью метода getDBTableName() класса Base
-        if (!Application::getConnection(\Norbit\Appointment\ServicesTable::getConnectionName())->isTableExists(Base::getInstance("\Norbit\Appointment\ServicesTable")->getDBTableName())) {
-            // eсли таблицы не существует, то создаем её по ORM сущности
-            Base::getInstance("\Norbit\Appointment\ServicesTable")->createDbTable();
-        }
-        // через класс Application получаем соединение по переданному параметру, параметр берем из ORM-сущности (он указывается, если необходим другой тип подключения, отличный от default), если тип подключения по умолчанию, то параметр можно не передавать. Далее по подключению вызываем метод isTableExists, в который передаем название таблицы полученное с помощью метода getDBTableName() класса Base
-        if (!Application::getConnection(\Norbit\Appointment\BranchesTable::getConnectionName())->isTableExists(Base::getInstance("\Norbit\Appointment\BranchesTable")->getDBTableName())) {
-            // eсли таблицы не существует, то создаем её по ORM сущности
-            Base::getInstance("\Norbit\Appointment\BranchesTable")->createDbTable();
-        }
-        // через класс Application получаем соединение по переданному параметру, параметр берем из ORM-сущности (он указывается, если необходим другой тип подключения, отличный от default), если тип подключения по умолчанию, то параметр можно не передавать. Далее по подключению вызываем метод isTableExists, в который передаем название таблицы полученное с помощью метода getDBTableName() класса Base
-        if (!Application::getConnection(\Norbit\Appointment\SpecialistsTable::getConnectionName())->isTableExists(Base::getInstance("\Norbit\Appointment\SpecialistsTable")->getDBTableName())) {
-            // eсли таблицы не существует, то создаем её по ORM сущности
-            Base::getInstance("\Norbit\Appointment\SpecialistsTable")->createDbTable();
-        }
-        // через класс Application получаем соединение по переданному параметру, параметр берем из ORM-сущности (он указывается, если необходим другой тип подключения, отличный от default), если тип подключения по умолчанию, то параметр можно не передавать. Далее по подключению вызываем метод isTableExists, в который передаем название таблицы полученное с помощью метода getDBTableName() класса Base
-        if (!Application::getConnection(\Norbit\Appointment\SlotsTable::getConnectionName())->isTableExists(Base::getInstance("\Norbit\Appointment\SlotsTable")->getDBTableName())) {
-            // eсли таблицы не существует, то создаем её по ORM сущности
-            Base::getInstance("\Norbit\Appointment\SlotsTable")->createDbTable();
-        }
-        // через класс Application получаем соединение по переданному параметру, параметр берем из ORM-сущности (он указывается, если необходим другой тип подключения, отличный от default), если тип подключения по умолчанию, то параметр можно не передавать. Далее по подключению вызываем метод isTableExists, в который передаем название таблицы полученное с помощью метода getDBTableName() класса Base
-        if (!Application::getConnection(\Norbit\Appointment\AppointmentsTable::getConnectionName())->isTableExists(Base::getInstance("\Norbit\Appointment\AppointmentsTable")->getDBTableName())) {
-            // eсли таблицы не существует, то создаем её по ORM сущности
-            Base::getInstance("\Norbit\Appointment\AppointmentsTable")->createDbTable();
-        }
+        return true;
     }
 
     // метод для удаления таблицы баз данных
     function UnInstallDB()
     {
-        // подключаем модуль для того что бы был видем класс ORM
-        Loader::includeModule($this->MODULE_ID);
-        // делаем запрос к бд на удаление таблицы, если она существует, по подключению к бд класса Application с параметром подключения ORM сущности
-        Application::getConnection(\Norbit\Appointment\ServicesTable::getConnectionName())->queryExecute('DROP TABLE IF EXISTS ' . Base::getInstance("\Norbit\Appointment\ServicesTable")->getDBTableName());
-        // делаем запрос к бд на удаление таблицы, если она существует, по подключению к бд класса Application с параметром подключения ORM сущности
-        Application::getConnection(\Norbit\Appointment\BranchesTable::getConnectionName())->queryExecute('DROP TABLE IF EXISTS ' . Base::getInstance("\Norbit\Appointment\BranchesTable")->getDBTableName());
-        // делаем запрос к бд на удаление таблицы, если она существует, по подключению к бд класса Application с параметром подключения ORM сущности
-        Application::getConnection(\Norbit\Appointment\SpecialistsTable::getConnectionName())->queryExecute('DROP TABLE IF EXISTS ' . Base::getInstance("\Norbit\Appointment\SpecialistsTable")->getDBTableName());
-        // делаем запрос к бд на удаление таблицы, если она существует, по подключению к бд класса Application с параметром подключения ORM сущности
-        Application::getConnection(\Norbit\Appointment\SlotsTable::getConnectionName())->queryExecute('DROP TABLE IF EXISTS ' . Base::getInstance("\Norbit\Appointment\SlotsTable")->getDBTableName());
-        // делаем запрос к бд на удаление таблицы, если она существует, по подключению к бд класса Application с параметром подключения ORM сущности
-        Application::getConnection(\Norbit\Appointment\AppointmentsTable::getConnectionName())->queryExecute('DROP TABLE IF EXISTS ' . Base::getInstance("\Norbit\Appointment\AppointmentsTable")->getDBTableName());
+        return true;
+    }
 
-        // удаляем параметры модуля из базы данных битрикс
-        Option::delete($this->MODULE_ID);
+    function InstallTables()
+    {
+        Loader::includeModule($this->MODULE_ID);
+
+        $tables = $this->getTables();
+        foreach ($tables as $table) {
+            if ($table instanceof DataManager) {
+                if (!Application::getConnection()->isTableExists($table::getTableName())) {
+                    $table::getEntity()->createDbTable();
+                }
+            }
+        }
+
+        return true;
+    }
+
+    function UnInstallTables()
+    {
+        Loader::includeModule($this->MODULE_ID);
+
+        $tables = $this->getTables();
+        foreach ($tables as $table) {
+            if ($table instanceof DataManager) {
+                if (Application::getConnection()->isTableExists($table::getTableName())) {
+                    Application::getConnection()->dropTable($table::getTableName());
+                }
+            }
+        }
+
+        return true;
+    }
+
+    function getTables(): array
+    {
+        return [
+            (new \Norbit\Appointment\ORM\ServicesTable),
+            (new \Norbit\Appointment\ORM\BranchesTable),
+            (new \Norbit\Appointment\ORM\SpecialistsTable),
+            (new \Norbit\Appointment\ORM\SlotsTable),
+            (new \Norbit\Appointment\ORM\AppointmentsTable),
+        ];
+    }
+
+    // заполнение таблиц тестовыми данными
+    function FillingTables()
+    {
+        $this->fillingServicesTable();
+        $this->fillingBranchesTable();
+        $this->fillingSpecialistsTable();
+        $this->fillingSlotsTable();
+        $this->fillingAppointmentsTable();
+    }
+
+    function fillingServicesTable()
+    {
+        $arServices = [
+            [
+                "ACTIVE" => "Y",
+                "SITE" => "s1",
+                "NAME" => "Test Service",
+            ],
+        ];
+
+        foreach ($arServices as $item) {
+            ServicesTable::add($item);
+        }
+    }
+
+    function fillingBranchesTable()
+    {
+        $arBranches = [
+            [
+                "ACTIVE" => "Y",
+                "SITE" => "s1",
+                "NAME" => "Test Branch",
+                "SERVICE_ID" => "1",
+            ],
+        ];
+
+        foreach ($arBranches as $item) {
+            BranchesTable::add($item);
+        }
+    }
+
+    function fillingSpecialistsTable()
+    {
+        $arSpecialists = [
+            [
+                "ACTIVE" => "Y",
+                "SITE" => "s1",
+                "NAME" => "Test Specialist",
+                "SERVICE_ID" => "1",
+                "BRANCH_ID" => "1",
+            ],
+        ];
+
+        foreach ($arSpecialists as $item) {
+            SpecialistsTable::add($item);
+        }
+    }
+
+    function fillingSlotsTable()
+    {
+        $arSlots = [
+            [
+                "ACTIVE" => "Y",
+                "SITE" => "s1",
+                "SERVICE_ID" => "1",
+                "BRANCH_ID" => "1",
+                "SPECIALIST_ID" => "1",
+                "DATE" => new \Bitrix\Main\Type\DateTime(date("d.m.Y H:00:00")),
+            ],
+            [
+                "ACTIVE" => "Y",
+                "SITE" => "s1",
+                "SERVICE_ID" => "1",
+                "BRANCH_ID" => "1",
+                "SPECIALIST_ID" => "1",
+                "DATE" => new \Bitrix\Main\Type\DateTime(date("d.m.Y H:00:00", strtotime("+1 hour"))),
+            ],
+            [
+                "ACTIVE" => "Y",
+                "SITE" => "s1",
+                "SERVICE_ID" => "1",
+                "BRANCH_ID" => "1",
+                "SPECIALIST_ID" => "1",
+                "DATE" => new \Bitrix\Main\Type\DateTime(date("d.m.Y H:00:00", strtotime("+2 hour"))),
+            ],
+            [
+                "ACTIVE" => "Y",
+                "SITE" => "s1",
+                "SERVICE_ID" => "1",
+                "BRANCH_ID" => "1",
+                "SPECIALIST_ID" => "1",
+                "DATE" => new \Bitrix\Main\Type\DateTime(date("d.m.Y H:00:00", strtotime("+1 day"))),
+            ],
+        ];
+
+        foreach ($arSlots as $item) {
+            SlotsTable::add($item);
+        }
+    }
+
+    function fillingAppointmentsTable()
+    {
+        $arAppointments = [
+            [
+                "ACTIVE" => "Y",
+                "SITE" => "s1",
+                "SERVICE_ID" => "1",
+                "BRANCH_ID" => "1",
+                "SPECIALIST_ID" => "1",
+                "SLOT_ID" => "3",
+                "DATE" => new \Bitrix\Main\Type\DateTime(date("d.m.Y H:00:00", strtotime("+2 hour"))),
+                "FULL_NAME" => "Pupkin Ivan Petrovish",
+                "PHONE" => "+79999999999",
+            ],
+        ];
+
+        foreach ($arAppointments as $item) {
+            AppointmentsTable::add($item);
+        }
     }
 
     // метод для создания обработчика событий
@@ -168,17 +364,18 @@ class Norbit_Appointment extends CModule
     {
         // для работы с ORM, есть три типа событий: onBefore<Action> - перед вызовом запроса (можно изменить входные параметры), после следуют валидаторы. on<Action> - уже нельзя изменить входные параметры, после выполняется SQL-запрос. onAfter<Action> - после выполнения операции, операция уже совершена
         // три события <Action> итого 9 событий: Add, Update, Delete
-        EventManager::getInstance()->registerEventHandler(
-        // идентификатор модуля, для которого регистрируется событие
+        $eventManager = EventManager::getInstance();
+        $eventManager->registerEventHandler(
+            // идентификатор модуля, для которого регистрируется событие
             $this->MODULE_ID,
             // тип события, класс называется DataTable, но должно передаваться по имени файла, то есть просто Data
-            "\Norbit\Appointment\Appointments::OnAfterAdd",
+            "\Norbit\Appointment\ORM\Appointments::OnAfterAdd",
             // идентификатор модуля к которому относится регистрируемый обработчик, из какого модуля берется класс, нужно если необходимо связать 2 модуля, если используем один, то дублируем поле с первым
             $this->MODULE_ID,
             // класс обработчика
-            "\Norbit\Appointment\Events",
+            AppointmentsHandler::class,
             // метод обработчика
-            'eventHandler'
+            'OnAfterAppointmentsAdd'
         );
 
         // для успешного завершения, метод должен вернуть true
@@ -189,12 +386,18 @@ class Norbit_Appointment extends CModule
     function UnInstallEvents()
     {
         // удаление событий, аналогично установке
-        EventManager::getInstance()->unRegisterEventHandler(
+        $eventManager = EventManager::getInstance();
+        $eventManager->unRegisterEventHandler(
+        // идентификатор модуля, для которого регистрируется событие
             $this->MODULE_ID,
-            "\Norbit\Appointment\Appointments::OnAfterAdd",
+            // тип события, класс называется DataTable, но должно передаваться по имени файла, то есть просто Data
+            "\Norbit\Appointment\ORM\Appointments::OnAfterAdd",
+            // идентификатор модуля к которому относится регистрируемый обработчик, из какого модуля берется класс, нужно если необходимо связать 2 модуля, если используем один, то дублируем поле с первым
             $this->MODULE_ID,
-            "\Norbit\Appointment\Events",
-            'eventHandler'
+            // класс обработчика
+            AppointmentsHandler::class,
+            // метод обработчика
+            'OnAfterAppointmentsAdd'
         );
 
         // для успешного завершения, метод должен вернуть true
@@ -237,103 +440,6 @@ class Norbit_Appointment extends CModule
         DeleteDirFiles(
             __DIR__ . "/routes",
             $_SERVER["DOCUMENT_ROOT"] . "/local/routes"
-        );
-
-        // для успешного завершения, метод должен вернуть true
-        return true;
-    }
-
-    // заполнение таблиц тестовыми данными
-    function addData()
-    {
-        // подключаем модуль для видимости ORM класса
-        Loader::includeModule($this->MODULE_ID);
-
-        // добавляем запись в таблицу БД
-        \Norbit\Appointment\ServicesTable::add(
-            array(
-                "ACTIVE" => "Y",
-                "SITE" => "s1",
-                "NAME" => "Test Service",
-            )
-        );
-
-        // добавляем запись в таблицу БД
-        \Norbit\Appointment\BranchesTable::add(
-            array(
-                "ACTIVE" => "Y",
-                "SITE" => "s1",
-                "NAME" => "Test Branch",
-                "SERVICE_ID" => "1",
-            )
-        );
-
-        // добавляем запись в таблицу БД
-        \Norbit\Appointment\SpecialistsTable::add(
-            array(
-                "ACTIVE" => "Y",
-                "SITE" => "s1",
-                "NAME" => "Test Specialist",
-                "SERVICE_ID" => "1",
-                "BRANCH_ID" => "1",
-            )
-        );
-
-        // добавляем запись в таблицу БД
-        \Norbit\Appointment\SlotsTable::add(
-            array(
-                "ACTIVE" => "Y",
-                "SITE" => "s1",
-                "SERVICE_ID" => "1",
-                "BRANCH_ID" => "1",
-                "SPECIALIST_ID" => "1",
-                "DATE" => new \Bitrix\Main\Type\DateTime(date("d.m.Y H:00:00")),
-            ),
-        );
-        \Norbit\Appointment\SlotsTable::add(
-            array(
-                "ACTIVE" => "Y",
-                "SITE" => "s1",
-                "SERVICE_ID" => "1",
-                "BRANCH_ID" => "1",
-                "SPECIALIST_ID" => "1",
-                "DATE" => new \Bitrix\Main\Type\DateTime(date("d.m.Y H:00:00", strtotime("+1 hour"))),
-            ),
-        );
-        \Norbit\Appointment\SlotsTable::add(
-            array(
-                "ACTIVE" => "N",
-                "SITE" => "s1",
-                "SERVICE_ID" => "1",
-                "BRANCH_ID" => "1",
-                "SPECIALIST_ID" => "1",
-                "DATE" => new \Bitrix\Main\Type\DateTime(date("d.m.Y H:00:00", strtotime("+2 hour"))),
-            ),
-        );
-        \Norbit\Appointment\SlotsTable::add(
-            array(
-                "ACTIVE" => "Y",
-                "SITE" => "s1",
-                "SERVICE_ID" => "1",
-                "BRANCH_ID" => "1",
-                "SPECIALIST_ID" => "1",
-                "DATE" => new \Bitrix\Main\Type\DateTime(date("d.m.Y H:00:00", strtotime("+1 day"))),
-            ),
-        );
-
-        // добавляем запись в таблицу БД
-        \Norbit\Appointment\AppointmentsTable::add(
-            array(
-                "ACTIVE" => "Y",
-                "SITE" => "s1",
-                "SERVICE_ID" => "1",
-                "BRANCH_ID" => "1",
-                "SPECIALIST_ID" => "1",
-                "SLOT_ID" => "3",
-                "DATE" => new \Bitrix\Main\Type\DateTime(date("d.m.Y H:00:00", strtotime("+2 hour"))),
-                "FULL_NAME" => "Pupkin Ivan Petrovish",
-                "PHONE" => "+79999999999",
-            )
         );
 
         // для успешного завершения, метод должен вернуть true
