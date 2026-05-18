@@ -17,18 +17,27 @@ use Norbit\Appointment\Repository\AppointmentRepository;
 class AppointmentService
 {
     private AppointmentRepository $appointmentRepository;
+    private SlotsTable $slotsTable;
 
     /**
      * @param AppointmentRepository|null $appointmentRepository
+     * @param SlotsTable|null $slotsTable *
      */
-    public function __construct(?AppointmentRepository $appointmentRepository = null)
+    public function __construct(?AppointmentRepository $appointmentRepository = null, ?SlotsTable $slotsTable = null)
     {
         $this->appointmentRepository = $appointmentRepository ?? new AppointmentRepository();
+        $this->slotsTable = $slotsTable ?? new SlotsTable();
     }
 
+    /**
+     * Проверка доступности слота
+     *
+     * @param array $request
+     * @return boolean|null
+     */
     public function checkingSlotAvailability($request): bool
     {
-        $result = SlotsTable::getList([
+        $result = $this->slotsTable::getList([
             'select' => ['ID'],
             'filter' => [
                 'ID' => $request['slot_id'],
@@ -48,6 +57,12 @@ class AppointmentService
         return false;
     }
 
+    /**
+     * Создание заявки
+     *
+     * @param array $request
+     * @return AddResult|null
+     */
     public function addAppointment(array $request): ?AddResult
     {
         $fields = $this->getAppointmentFields($request);
@@ -55,11 +70,11 @@ class AppointmentService
     }
 
     /**
-     * Удаление категории
+     * Удаление заявки
      *
      * @param array $request
      * @return DeleteResult|null
-     * @throws SbktsUniversalException
+     * @throws NorbitAppointmentException
      */
     public function deleteAppointment(array $request): ?DeleteResult
     {
@@ -74,7 +89,7 @@ class AppointmentService
      *
      * @param array $request
      * @return array
-     * @throws SbktsUniversalException
+     * @throws NorbitAppointmentException
      */
     private function getAppointmentFields(array $request): array
     {

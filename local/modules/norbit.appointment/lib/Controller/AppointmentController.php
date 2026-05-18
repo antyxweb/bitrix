@@ -72,18 +72,12 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Метод для получения информации о типе заявителя по коду типа.
+     * Создание заявки
      *
-     * @param int $service_id ID услуги
-     * @param int $branch_id ID филиала
-     * @param int $specialist_id ID специалиста
-     * @param int $slot_id ID слота
-     * @param string $date Дата записи
-     * @param string $fill_name ФИО клиента
-     * @param string $phone Телефон клиента
-     *
-     * @return array|AjaxJson Возвращает массив с данными записи или AjaxJson с ошибками.
-     */
+     * @return array|AjaxJson
+     * * @throws Throwable
+     * * @throws BaseExceptionInterface
+ */
     public function addAction(): array|AjaxJson
     {
         try {
@@ -115,7 +109,7 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Удаление категории
+     * Удаление заявки
      *
      * @return array|AjaxJson
      * @throws Throwable

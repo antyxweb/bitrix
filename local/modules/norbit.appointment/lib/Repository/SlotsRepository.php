@@ -12,7 +12,7 @@ class SlotsRepository
 {
 
     /**
-     * Добавление категории
+     * Добавление слота
      *
      * @param array $data
      * @return AddResult|null
@@ -24,7 +24,7 @@ class SlotsRepository
     }
 
     /**
-     * Обновление категории
+     * Обновление слота
      *
      * @param int $id
      * @param array $fields
@@ -37,7 +37,7 @@ class SlotsRepository
     }
 
     /**
-     * Удаление категории
+     * Удаление слота
      *
      * @param int $id
      * @return DeleteResult|null

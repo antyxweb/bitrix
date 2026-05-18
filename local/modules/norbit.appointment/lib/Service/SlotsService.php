@@ -25,6 +25,13 @@ class SlotsService
         $this->slotsRepository = $appointmentRepository ?? new SlotsRepository();
     }
 
+    /**
+     * Установка активности слота
+     *
+     * @param array $request
+     * @return UpdateResult|null
+     * @throws NorbitAppointmentException
+     */
     public function updateSlotAvailability(array $request): ?UpdateResult
     {
         if (!intval($request['slot_id'])) {

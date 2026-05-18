@@ -12,7 +12,7 @@ class AppointmentRepository
 {
 
     /**
-     * Добавление категории
+     * Добавление записи
      *
      * @param array $data
      * @return AddResult|null
@@ -24,7 +24,7 @@ class AppointmentRepository
     }
 
     /**
-     * Обновление категории
+     * Обновление записи
      *
      * @param int $id
      * @param array $fields
@@ -37,7 +37,7 @@ class AppointmentRepository
     }
 
     /**
-     * Удаление категории
+     * Удаление записи
      *
      * @param int $id
      * @return DeleteResult|null
