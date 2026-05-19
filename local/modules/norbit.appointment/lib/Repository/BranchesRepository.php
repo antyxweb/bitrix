@@ -6,12 +6,12 @@ use Bitrix\Main\Entity\ExpressionField;
 use Bitrix\Main\ORM\Data\AddResult;
 use Bitrix\Main\ORM\Data\UpdateResult;
 use Bitrix\Main\ORM\Data\DeleteResult;
-use Norbit\Appointment\ORM\SlotsTable;
+use Norbit\Appointment\ORM\BranchesTable;
 
-class SlotsRepository
+class BranchesRepository
 {
     /**
-     * Получение слотов
+     * Получение филиалов
      *
      * @param array $select Поля выборки
      * @param array $filter Фильтр выборки
@@ -22,18 +22,17 @@ class SlotsRepository
      * @throws ObjectPropertyException
      * @throws SystemException
      */
-    public function getList(array $select = ['*'], array $filter = [], array $order = [], int $limit = 0): ?array
+    public function getList(array $select = ['*'], array $filter = [], array $order = []): ?array
     {
-        return SlotsTable::query()
+        return BranchesTable::query()
             ->setSelect($select)
             ->setFilter($filter)
             ->setOrder($order)
-            ->setLimit($limit)
             ->fetchAll();
     }
 
     /**
-     * Добавление слота
+     * Добавление филиала
      *
      * @param array $data
      * @return AddResult|null
@@ -41,11 +40,11 @@ class SlotsRepository
      */
     public function add(array $data): ?AddResult
     {
-        return SlotsTable::add($data);
+        return BranchesTable::add($data);
     }
 
     /**
-     * Обновление слота
+     * Обновление филиала
      *
      * @param int $id
      * @param array $fields
@@ -54,11 +53,11 @@ class SlotsRepository
      */
     public function update(int $id, array $fields): ?UpdateResult
     {
-        return SlotsTable::update($id, $fields);
+        return BranchesTable::update($id, $fields);
     }
 
     /**
-     * Удаление слота
+     * Удаление филиала
      *
      * @param int $id
      * @return DeleteResult|null
@@ -66,7 +65,7 @@ class SlotsRepository
      */
     public function delete(int $id): ?DeleteResult
     {
-        return SlotsTable::delete([
+        return BranchesTable::delete([
             'ID' => $id
         ]);
     }

@@ -22,7 +22,50 @@ class SlotsService
      */
     public function __construct(?SlotsRepository $slotsRepository = null)
     {
-        $this->slotsRepository = $appointmentRepository ?? new SlotsRepository();
+        $this->slotsRepository = $slotsRepository ?? new SlotsRepository();
+    }
+
+    /**
+     * Получение специалистов
+     *
+     * @param array $params
+     * @return array|null
+     */
+    public function getSlots(array $params): ?array
+    {
+        $select = $params['select'] ?? ['*'];
+        $filter = $params['filter'] ?? [];
+        $order = $params['order'] ?? [];
+
+        return $this->slotsRepository->getList($select, $filter, $order);
+    }
+
+    /**
+     * Проверка доступности слота
+     *
+     * @param array $request
+     * @return boolean|null
+     */
+    public function checkingSlotAvailability($request): bool
+    {
+        $select = ['ID'];
+        $filter = [
+            'ID' => $request['slot_id'],
+            'ACTIVE' => 'Y',
+            'SERVICE_ID' => $request['service_id'],
+            'BRANCH_ID' => $request['branch_id'],
+            'SPECIALIST_ID' => $request['specialist_id'],
+        ];
+        $order = [];
+        $limit = 1;
+
+        $row = $this->slotsRepository->getList($select, $filter, $order, $limit);
+
+        if(count($row)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -37,7 +80,7 @@ class SlotsService
         if (!intval($request['slot_id'])) {
             throw new NorbitAppointmentException('Not ID');
         }
-        return $this->slotsRepository->updateSlot(intval($request['slot_id']), ['ACTIVE' => 'Y']);
+        return $this->slotsRepository->update(intval($request['slot_id']), ['ACTIVE' => 'Y']);
     }
 
 }

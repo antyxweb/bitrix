@@ -14,7 +14,7 @@ use Bitrix\Main\Application;
 use Bitrix\Main\DB\Connection;
 use Bitrix\Main\DB\SqlExpression;
 use Bitrix\Main\DB\TransactionException;
-use Norbit\Main\Exception\BaseExceptionInterface;
+use Norbit\Appointment\Exception\BaseExceptionInterface;
 
 class AppointmentController extends Controller
 {
@@ -83,7 +83,7 @@ class AppointmentController extends Controller
         try {
             $request = $this->request->toArray();
 
-            if(!$this->appointmentService->checkingSlotAvailability($request)) {
+            if(!$this->slotsService->checkingSlotAvailability($request)) {
                 $this->addError(new Error('This slot is not available'));
                 return [];
             }
@@ -117,7 +117,11 @@ class AppointmentController extends Controller
      */
     public function deleteAction(): array|AjaxJson
     {
+        $db = \Bitrix\Main\Application::getConnection(); //Connection $db
+
         try {
+            $db->startTransaction();
+
             $request = $this->request->toArray();
 
             $result = $this->appointmentService->deleteAppointment($request);
@@ -125,20 +129,28 @@ class AppointmentController extends Controller
                 $resultSlot = $this->slotsService->updateSlotAvailability($request);
 
                 if ($resultSlot->isSuccess()) {
+                    $db->commitTransaction();
+
                     return ['data' => $result->getData()];
                 } else {
+                    $db->rollbackTransaction();
+
                     foreach ($result->getErrors() as $error) {
                         $this->addError(new Error($error->getMessage()));
                     }
                 }
             } else {
+                $db->rollbackTransaction();
+
                 foreach ($result->getErrors() as $error) {
                     $this->addError(new Error($error->getMessage()));
                 }
             }
         } catch (BaseExceptionInterface $e) {
+            $db->rollbackTransaction();
             $this->addError(new Error($e->getMessage(), $e->getCode()));
         } catch (Throwable $e) {
+            $db->rollbackTransaction();
             //$message = self::makeUnexpectedErrorLogAndGetUniversalMessage('SBKTS_CATEGORY_CONTROLLER_DELETE_ACTION', $e);
             //$this->addError(new Error($message, $e->getCode()));
             $this->addError(new Error('Error delete'));

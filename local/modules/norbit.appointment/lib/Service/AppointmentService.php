@@ -2,31 +2,31 @@
 
 namespace Norbit\Appointment\Service;
 
+use Bitrix\Main\ArgumentException;
+use Bitrix\Main\ObjectPropertyException;
+use Bitrix\Main\SystemException;
+use Exception;
 use Bitrix\Main\Error;
 use Bitrix\Main\ORM\Data\AddResult;
 use Bitrix\Main\ORM\Data\DeleteResult;
 use Bitrix\Main\ORM\Data\UpdateResult;
-use Bitrix\Main\ArgumentException;
 use Bitrix\Main\Context;
 use Bitrix\Main\Web\Cookie;
 use Bitrix\Main\Web\Json;
-use Norbit\Appointment\ORM\SlotsTable;
-use Norbit\Appointment\Exception\NorbitAppointmentException;
 use Norbit\Appointment\Repository\AppointmentRepository;
+use Norbit\Appointment\Exception\BaseExceptionInterface;
+use Norbit\Appointment\Exception\NorbitAppointmentException;
 
 class AppointmentService
 {
     private AppointmentRepository $appointmentRepository;
-    private SlotsTable $slotsTable;
 
     /**
      * @param AppointmentRepository|null $appointmentRepository
-     * @param SlotsTable|null $slotsTable *
      */
-    public function __construct(?AppointmentRepository $appointmentRepository = null, ?SlotsTable $slotsTable = null)
+    public function __construct(?AppointmentRepository $appointmentRepository = null)
     {
         $this->appointmentRepository = $appointmentRepository ?? new AppointmentRepository();
-        $this->slotsTable = $slotsTable ?? new SlotsTable();
     }
 
     /**
@@ -35,7 +35,7 @@ class AppointmentService
      * @param array $request
      * @return boolean|null
      */
-    public function checkingSlotAvailability($request): bool
+    /*public function checkingSlotAvailability($request): bool
     {
         $result = $this->slotsTable::getList([
             'select' => ['ID'],
@@ -55,7 +55,7 @@ class AppointmentService
         }
 
         return false;
-    }
+    }*/
 
     /**
      * Создание заявки

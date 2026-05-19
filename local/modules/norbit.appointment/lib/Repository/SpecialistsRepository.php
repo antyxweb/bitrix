@@ -6,12 +6,12 @@ use Bitrix\Main\Entity\ExpressionField;
 use Bitrix\Main\ORM\Data\AddResult;
 use Bitrix\Main\ORM\Data\UpdateResult;
 use Bitrix\Main\ORM\Data\DeleteResult;
-use Norbit\Appointment\ORM\SlotsTable;
+use Norbit\Appointment\ORM\SpecialistsTable;
 
-class SlotsRepository
+class SpecialistsRepository
 {
     /**
-     * Получение слотов
+     * Получение специалистов
      *
      * @param array $select Поля выборки
      * @param array $filter Фильтр выборки
@@ -22,18 +22,17 @@ class SlotsRepository
      * @throws ObjectPropertyException
      * @throws SystemException
      */
-    public function getList(array $select = ['*'], array $filter = [], array $order = [], int $limit = 0): ?array
+    public function getList(array $select = ['*'], array $filter = [], array $order = []): ?array
     {
-        return SlotsTable::query()
+        return SpecialistsTable::query()
             ->setSelect($select)
             ->setFilter($filter)
             ->setOrder($order)
-            ->setLimit($limit)
             ->fetchAll();
     }
 
     /**
-     * Добавление слота
+     * Добавление специалиста
      *
      * @param array $data
      * @return AddResult|null
@@ -41,11 +40,11 @@ class SlotsRepository
      */
     public function add(array $data): ?AddResult
     {
-        return SlotsTable::add($data);
+        return SpecialistsTable::add($data);
     }
 
     /**
-     * Обновление слота
+     * Обновление специалиста
      *
      * @param int $id
      * @param array $fields
@@ -54,11 +53,11 @@ class SlotsRepository
      */
     public function update(int $id, array $fields): ?UpdateResult
     {
-        return SlotsTable::update($id, $fields);
+        return SpecialistsTable::update($id, $fields);
     }
 
     /**
-     * Удаление слота
+     * Удаление специалиста
      *
      * @param int $id
      * @return DeleteResult|null
@@ -66,7 +65,7 @@ class SlotsRepository
      */
     public function delete(int $id): ?DeleteResult
     {
-        return SlotsTable::delete([
+        return SpecialistsTable::delete([
             'ID' => $id
         ]);
     }
