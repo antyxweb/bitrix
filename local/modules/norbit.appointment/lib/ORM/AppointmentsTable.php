@@ -189,11 +189,6 @@ class AppointmentsTable extends Entity\DataManager
 	// очистка тегированного кеша при добавлении
 	public static function onAfterAdd(Entity\Event $event)
 	{
-        $fields = $event->getParameter("fields");
-        if($slotId = $fields['SLOT_ID']) {
-            \Norbit\Appointment\ORM\SlotsTable::update($slotId, ['ACTIVE' => 'N']);
-        }
-
         AppointmentsTable::clearCache();
 	}
 	// очистка тегированного кеша при изменении

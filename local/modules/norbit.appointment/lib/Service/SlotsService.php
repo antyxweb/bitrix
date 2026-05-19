@@ -75,12 +75,12 @@ class SlotsService
      * @return UpdateResult|null
      * @throws NorbitAppointmentException
      */
-    public function updateSlotAvailability(array $request): ?UpdateResult
+    public function updateSlotAvailability(array $request, string $active = 'N'): ?UpdateResult
     {
         if (!intval($request['slot_id'])) {
             throw new NorbitAppointmentException('Not ID');
         }
-        return $this->slotsRepository->update(intval($request['slot_id']), ['ACTIVE' => 'Y']);
+        return $this->slotsRepository->update(intval($request['slot_id']), ['ACTIVE' => $active]);
     }
 
 }

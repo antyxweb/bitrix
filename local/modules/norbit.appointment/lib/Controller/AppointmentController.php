@@ -6,7 +6,6 @@ use Bitrix\Main\Engine\ActionFilter;
 use Bitrix\Main\Engine\Response\AjaxJson;
 use Bitrix\Main\Error;
 use Bitrix\Main\Request;
-use Norbit\Appointment\ORM\AppointmentsTable;
 use Norbit\Appointment\Service\AppointmentService;
 use Norbit\Appointment\Service\SlotsService;
 use Norbit\Appointment\ORM\SlotsTable;
@@ -18,22 +17,19 @@ use Norbit\Appointment\Exception\BaseExceptionInterface;
 
 class AppointmentController extends Controller
 {
-    private AppointmentsTable $appointmentsTable;
     private AppointmentService $appointmentService;
     private SlotsService $slotsService;
 
     /**
      * Конструктор класса AppointmentController.
-     * @param AppointmentsTable|null $appointmentsTable     *
      * @param AppointmentService|null $appointmentService     *
      * @param SlotsService|null $slotsService     *
      * @param Request|null $request
      */
-    public function __construct(?Request $request = null, ?AppointmentsTable $appointmentsTable = null, ?AppointmentService $appointmentService = null, ?SlotsService $slotsService = null)
+    public function __construct(?Request $request = null, ?AppointmentService $appointmentService = null, ?SlotsService $slotsService = null)
     {
         parent::__construct($request);
 
-        $this->appointmentsTable = $appointmentsTable ?? new AppointmentsTable();
         $this->appointmentService = $appointmentService ?? new AppointmentService();
         $this->slotsService = $slotsService ?? new SlotsService();
     }
@@ -126,7 +122,7 @@ class AppointmentController extends Controller
 
             $result = $this->appointmentService->deleteAppointment($request);
             if ($result->isSuccess()) {
-                $resultSlot = $this->slotsService->updateSlotAvailability($request);
+                $resultSlot = $this->slotsService->updateSlotAvailability($request, 'Y');
 
                 if ($resultSlot->isSuccess()) {
                     $db->commitTransaction();
