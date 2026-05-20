@@ -6,6 +6,8 @@ namespace Norbit\Appointment\ORM;
 use \Bitrix\Main\Entity;
 // пространство имен для кеша
 use \Bitrix\Main\Application;
+use Bitrix\Main\Entity\ReferenceField;
+use Bitrix\Main\Localization\Loc;
 
 // сущность ORM унаследованная от DataManager
 class ServicesTable extends Entity\DataManager
@@ -37,61 +39,31 @@ class ServicesTable extends Entity\DataManager
          * StringField - varchar
          */
 
-		return array(
-			// ID
-			new Entity\IntegerField(
-				// имя сущности
-				"ID",
-				array(
-					// первичный ключ
-					"primary" => true,
-					// AUTO INCREMENT
-					"autocomplete" => true,
-				)
-			),
-			// Активность
-			new Entity\BooleanField(
-				'ACTIVE',
-				array(
-					"values" => array('N', 'Y')
-				)
-			),
-			// Сайт
-			new Entity\StringField(
-				// имя сущности
-				"SITE",
-				array(
-					// обязательное поле
-					"required" => true,
-				)
-			),
-			// Название
-			new Entity\StringField(
-				// имя сущности
-				"NAME",
-				array(
-					// обязательное поле
-					"required" => true,
-				)
-			),
-		);
+        return [
+            (new Entity\IntegerField('ID'))
+                ->configurePrimary()
+                ->configureAutocomplete()
+                ->configureTitle(
+                    Loc::getMessage('APPOINTMENTS_ID')
+                ),
+            (new Entity\BooleanField('ACTIVE'))
+                ->configureValues('N', 'Y')
+                ->configureDefaultValue('Y')
+                ->configureTitle(
+                    Loc::getMessage('APPOINTMENTS_ACTIVE')
+                ),
+            (new Entity\StringField('SITE'))
+                ->configureRequired()
+                ->configureTitle(
+                    Loc::getMessage('APPOINTMENTS_SITE')
+                ),
+            (new Entity\StringField('NAME'))
+                ->configureRequired()
+                ->configureTitle(
+                    Loc::getMessage('APPOINTMENTS_NAME')
+                ),
+        ];
 	}
-
-	// // события можно задавать прямо в ORM-сущности, для примера запретим изменять поле LINK_PICTURE
-	// public static function onBeforeUpdate(Entity\Event $event)
-	// {
-	// 	$result = new Entity\EventResult;
-	// 	$data = $event->getParameter("fields");
-	// 	if (isset($data["LINK_PICTURE"])) {
-	// 		$result->addError(
-	// 			new Entity\FieldError(
-	// 				$event->getEntity()->getField("LINK_PICTURE"),
-	// 				"Запрещено менять LINK_PICTURE код у баннера"
-	// 			)
-	// 		);
-	// 	}
-	// 	return $result;
-	// }
 
 	// очистка тегированного кеша при добавлении
 	public static function onAfterAdd(Entity\Event $event)

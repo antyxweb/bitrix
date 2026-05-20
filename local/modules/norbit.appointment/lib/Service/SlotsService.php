@@ -57,9 +57,8 @@ class SlotsService
             'SPECIALIST_ID' => $request['specialist_id'],
         ];
         $order = [];
-        $limit = 1;
 
-        $row = $this->slotsRepository->getList($select, $filter, $order, $limit);
+        $row = $this->slotsRepository->getList($select, $filter, $order);
 
         if(count($row)) {
             return true;

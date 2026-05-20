@@ -6,6 +6,11 @@ namespace Norbit\Appointment\ORM;
 use \Bitrix\Main\Entity;
 // пространство имен для кеша
 use \Bitrix\Main\Application;
+use Bitrix\Main\Entity\ReferenceField;
+use Bitrix\Main\Localization\Loc;
+use Norbit\Appointment\ORM\ServicesTable;
+use Norbit\Appointment\ORM\BranchesTable;
+use Norbit\Appointment\ORM\SpecialistsTable;
 
 // сущность ORM унаследованная от DataManager
 class SlotsTable extends Entity\DataManager
@@ -37,102 +42,52 @@ class SlotsTable extends Entity\DataManager
          * StringField - varchar
          */
 
-		return array(
-			// ID
-			new Entity\IntegerField(
-				// имя сущности
-				"ID",
-				array(
-					// первичный ключ
-					"primary" => true,
-					// AUTO INCREMENT
-					"autocomplete" => true,
-				)
-			),
-			// Активность
-			new Entity\BooleanField(
-				'ACTIVE',
-				array(
-					"values" => array('N', 'Y')
-				)
-			),
-			// Сайт
-			new Entity\StringField(
-				// имя сущности
-				"SITE",
-				array(
-					// обязательное поле
-					"required" => true,
-				)
-			),
-            // поле для хранения айди услуги, информация о которых будет храниться в другой таблице, свяжем данную таблицу с другой
-            new Entity\IntegerField(
-            // имя сущности
-                "SERVICE_ID"
-            ),
-            // для связи двух таблиц, нужно будет создать поле зависимости, фактически такого поля нет в базе, оно является виртуальным
-            new Entity\ReferenceField(
-            // имя сущности
-                "SERVICE",
-                // связываемая сущность другой таблицы
-                '\Norbit\Appointment\ORM\ServicesTable',
-                // this - текущая сущность, ref - связываемая
-                array("=this.SERVICE_ID" => "ref.ID")
-            ),
-            // поле для хранения айди филиала, информация о которых будет храниться в другой таблице, свяжем данную таблицу с другой
-            new Entity\IntegerField(
-            // имя сущности
-                "BRANCH_ID"
-            ),
-            // для связи двух таблиц, нужно будет создать поле зависимости, фактически такого поля нет в базе, оно является виртуальным
-            new Entity\ReferenceField(
-            // имя сущности
-                "BRANCH",
-                // связываемая сущность другой таблицы
-                '\Norbit\Appointment\ORM\BranchesTable',
-                // this - текущая сущность, ref - связываемая
-                array("=this.BRANCH_ID" => "ref.ID")
-            ),
-            // поле для хранения айди специалиста, информация о которых будет храниться в другой таблице, свяжем данную таблицу с другой
-            new Entity\IntegerField(
-            // имя сущности
-                "SPECIALIST_ID"
-            ),
-            // для связи двух таблиц, нужно будет создать поле зависимости, фактически такого поля нет в базе, оно является виртуальным
-            new Entity\ReferenceField(
-            // имя сущности
-                "SPECIALIST",
-                // связываемая сущность другой таблицы
-                '\Norbit\Appointment\ORM\SpecialistsTable',
-                // this - текущая сущность, ref - связываемая
-                array("=this.SPECIALIST_ID" => "ref.ID")
-            ),
-            // дата и время заполнения
-            new Entity\DatetimeField(
-            // имя сущности
-                "DATE",
-                array(
-                    'required' => true,
-                )
-            ),
-		);
+        return [
+            (new Entity\IntegerField('ID'))
+                ->configurePrimary()
+                ->configureAutocomplete()
+                ->configureTitle(
+                    Loc::getMessage('APPOINTMENTS_ID')
+                ),
+            (new Entity\BooleanField('ACTIVE'))
+                ->configureValues('N', 'Y')
+                ->configureDefaultValue('Y')
+                ->configureTitle(
+                    Loc::getMessage('APPOINTMENTS_ACTIVE')
+                ),
+            (new Entity\StringField('SITE'))
+                ->configureRequired()
+                ->configureTitle(
+                    Loc::getMessage('APPOINTMENTS_SITE')
+                ),
+            (new Entity\StringField('NAME'))
+                ->configureRequired()
+                ->configureTitle(
+                    Loc::getMessage('APPOINTMENTS_NAME')
+                ),
+            (new Entity\IntegerField('SERVICE_ID'))
+                ->setParameter('IS_REFERENCE_ID', true)
+                ->setParameter('REFERENCE_CLASS', ServicesTable::class)
+                ->configureRequired()
+                ->configureTitle(
+                    Loc::getMessage('APPOINTMENTS_SERVICE_ID')
+                ),
+            (new Entity\IntegerField('BRANCH_ID'))
+                ->setParameter('IS_REFERENCE_ID', true)
+                ->setParameter('REFERENCE_CLASS', BranchesTable::class)
+                ->configureRequired()
+                ->configureTitle(
+                    Loc::getMessage('APPOINTMENTS_BRANCH_ID')
+                ),
+            (new Entity\IntegerField('SPECIALIST_ID'))
+                ->setParameter('IS_REFERENCE_ID', true)
+                ->setParameter('REFERENCE_CLASS', SpecialistsTable::class)
+                ->configureRequired()
+                ->configureTitle(
+                    Loc::getMessage('APPOINTMENTS_SPECIALIST_ID')
+                ),
+        ];
 	}
-
-	// // события можно задавать прямо в ORM-сущности, для примера запретим изменять поле LINK_PICTURE
-	// public static function onBeforeUpdate(Entity\Event $event)
-	// {
-	// 	$result = new Entity\EventResult;
-	// 	$data = $event->getParameter("fields");
-	// 	if (isset($data["LINK_PICTURE"])) {
-	// 		$result->addError(
-	// 			new Entity\FieldError(
-	// 				$event->getEntity()->getField("LINK_PICTURE"),
-	// 				"Запрещено менять LINK_PICTURE код у баннера"
-	// 			)
-	// 		);
-	// 	}
-	// 	return $result;
-	// }
 
 	// очистка тегированного кеша при добавлении
 	public static function onAfterAdd(Entity\Event $event)

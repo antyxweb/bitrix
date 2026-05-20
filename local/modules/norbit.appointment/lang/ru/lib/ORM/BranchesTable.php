@@ -1,0 +1,6 @@
+<?
+$MESS['APPOINTMENTS_ID'] = 'ID';
+$MESS['APPOINTMENTS_ACTIVE'] = 'Активность';
+$MESS['APPOINTMENTS_SITE'] = 'Сайт';
+$MESS['APPOINTMENTS_NAME'] = 'Название';
+$MESS['APPOINTMENTS_SERVICE_ID'] = 'Услуга';

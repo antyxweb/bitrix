@@ -22,13 +22,12 @@ class SlotsRepository
      * @throws ObjectPropertyException
      * @throws SystemException
      */
-    public function getList(array $select = ['*'], array $filter = [], array $order = [], int $limit = 0): ?array
+    public function getList(array $select = ['*'], array $filter = [], array $order = []): ?array
     {
         return SlotsTable::query()
             ->setSelect($select)
             ->setFilter($filter)
             ->setOrder($order)
-            ->setLimit($limit)
             ->fetchAll();
     }
 

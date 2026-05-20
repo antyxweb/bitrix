@@ -30,34 +30,6 @@ class AppointmentService
     }
 
     /**
-     * Проверка доступности слота
-     *
-     * @param array $request
-     * @return boolean|null
-     */
-    /*public function checkingSlotAvailability($request): bool
-    {
-        $result = $this->slotsTable::getList([
-            'select' => ['ID'],
-            'filter' => [
-                'ID' => $request['slot_id'],
-                'ACTIVE' => 'Y',
-                'SERVICE_ID' => $request['service_id'],
-                'BRANCH_ID' => $request['branch_id'],
-                'SPECIALIST_ID' => $request['specialist_id'],
-            ],
-            'limit' => 1,
-        ]);
-        $row = $result->fetch();
-
-        if(intval($row['ID'])) {
-            return true;
-        }
-
-        return false;
-    }*/
-
-    /**
      * Создание заявки
      *
      * @param array $request

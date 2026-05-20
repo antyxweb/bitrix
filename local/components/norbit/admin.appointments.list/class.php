@@ -13,6 +13,7 @@ class AdminAppointmentsListComponent extends \CBitrixComponent
         $gridId = 'appointments_list';
         $filterId = 'appointments_list_filter';
 
+        $references = $this->getReferencesValues();
         $columns = $this->getColumnsForAppointmentsGrid();
         $filter = $this->getFilterForAppointmentsFilter();
 
@@ -66,6 +67,21 @@ class AdminAppointmentsListComponent extends \CBitrixComponent
                     //$value = $this->getValueForFieldWithAppointments($value);
                 }elseif ($columnCode == 'DATE') {
                     $value = $value->format('d.m.Y H:i:s');
+                }
+
+                if (array_key_exists($columnCode, $references)) {
+                    if (is_array($value)) {
+                        $arValue = [];
+                        foreach ($value as $val) {
+                            $arValue[] = $references[$columnCode][$val];
+                        }
+
+                        $value = $arValue
+                            ? implode(', ', $arValue)
+                            : GetMessage('ADMIN_ORDERS_LIST_NOT_SELECTED');
+                    } else {
+                        $value = $references[$columnCode][$value];
+                    }
                 }
 
                 $rowColumns[$columnCode] = $value;
@@ -138,18 +154,6 @@ class AdminAppointmentsListComponent extends \CBitrixComponent
                 'id' => 'ID',
                 'name' => GetMessage('ADMIN_APPOINTMENTS_LIST_ID_FIELD'),
                 'type' => 'number'
-            ],
-            [
-                'id' => 'CODE',
-                'name' => GetMessage('ADMIN_APPOINTMENTS_LIST_CODE_FIELD'),
-                'type' => 'string',
-                'default' => true
-            ],
-            [
-                'id' => 'NAME',
-                'name' => GetMessage('ADMIN_APPOINTMENTS_LIST_NAME_FIELD'),
-                'type' => 'string',
-                'default' => true
             ],
             [
                 'id' => 'ACTIVE',
@@ -226,23 +230,30 @@ class AdminAppointmentsListComponent extends \CBitrixComponent
         }
     }
 
-    private function getValueForFieldWithAppointments($value = null)
+    /**
+     * Получаем значения из всех зависимых таблиц, для формирования в колонках их значений вместо ID
+     */
+    private function getReferencesValues(): array
     {
-        if (empty($value)) {
-            $value = GetMessage('ADMIN_APPOINTMENTS_LIST_NOT_SELECTED');
-        } elseif (is_array($value)) {
-            $categories = SbktsApplicationEditHelper::getCategories();
-
-            $arValue = [];
-            foreach ($value as $categoryId) {
-                $arValue[] = $categories[$categoryId];
+        $columns = AppointmentsTable::getMap();
+        $references = [];
+        foreach ($columns as $field) {
+            if ($field->getParameter('IS_REFERENCE_ID')) {
+                $values = [];
+                $resValues = $field->getParameter('REFERENCE_CLASS')::query()
+                    ->setSelect(['*'])
+                    ->exec();
+                while($row = $resValues->fetch()) {
+                    if($field->getName() == 'SLOT_ID') {
+                        $values[$row['ID']] = $row['DATE'];
+                    } else {
+                        $values[$row['ID']] = $row['NAME'];
+                    }
+                }
+                $references[$field->getName()] = $values;
             }
-
-            $value = !empty($arValue)
-                ? implode(', ', $arValue)
-                : GetMessage('ADMIN_CATEGORIES_LIST_NOT_SELECTED');
         }
 
-        return $value;
+        return $references;
     }
 }
