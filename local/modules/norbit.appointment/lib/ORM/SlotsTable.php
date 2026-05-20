@@ -60,11 +60,6 @@ class SlotsTable extends Entity\DataManager
                 ->configureTitle(
                     Loc::getMessage('APPOINTMENTS_SITE')
                 ),
-            (new Entity\StringField('NAME'))
-                ->configureRequired()
-                ->configureTitle(
-                    Loc::getMessage('APPOINTMENTS_NAME')
-                ),
             (new Entity\IntegerField('SERVICE_ID'))
                 ->setParameter('IS_REFERENCE_ID', true)
                 ->setParameter('REFERENCE_CLASS', ServicesTable::class)
@@ -85,6 +80,11 @@ class SlotsTable extends Entity\DataManager
                 ->configureRequired()
                 ->configureTitle(
                     Loc::getMessage('APPOINTMENTS_SPECIALIST_ID')
+                ),
+            (new Entity\DatetimeField('DATE'))
+                ->configureRequired()
+                ->configureTitle(
+                    Loc::getMessage('APPOINTMENTS_DATE')
                 ),
         ];
 	}
